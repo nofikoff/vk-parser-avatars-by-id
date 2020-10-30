@@ -1,6 +1,7 @@
 {
-    "name": "rustafa/public_html",
-    "require": {
-        "guzzlehttp/guzzle": "7.0"
-    }
+  "name": "rustafa/public_html",
+  "require": {
+    "guzzlehttp/guzzle": "7.0",
+    "ext-pdo": "*"
+  }
 }

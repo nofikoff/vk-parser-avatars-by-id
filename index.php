@@ -37,6 +37,7 @@
 //vk.com/id11741
 //vk.com/id40695
 require('./vendor/autoload.php');
+require('config.php');
 require('vk.php');
 
 
@@ -52,10 +53,16 @@ require('vk.php');
 //73131
 //a_0b147363
 $vk = new vk();
-
+$id = $vk->get_id();
+// отключаем БД
+$vk->pdo = null;
 // читаем из БД id
-$responce=$vk->get_vk_page_avatar_link(103843);
+$status = $vk->get_vk_page_avatar_link($id);
 // пишем в БД ответ
+$vk->update_status($id, $status);
+// отключаем БД
+$vk->pdo = null;
+
 
 //логируем ошибки
 if (count($vk->error)) print_r($vk->error);

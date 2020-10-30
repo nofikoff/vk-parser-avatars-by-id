@@ -6,7 +6,7 @@
 class vk
 {
     public $http_client_use_proxy = 0;
-    public $DB;
+    public $pdo;
     public $error = [];
     public $client;
 
@@ -52,7 +52,11 @@ class vk
 
         echo "\nhttps://vk.com/id" . $id_profile . " смотрим аватарку \n";
 
-        if (preg_match('~"([^"]+?)&ava=1~um', $content, $urls)) {
+        if (preg_match('~(deactivated|images/camera_|service_msg_null|spamfight)~um', $content, $urls)) {
+            $this->error[] = $id_profile . " get_vk_page_avatar_link - страница скрыта или удалена";
+            return -2;
+
+        } else if (preg_match('~"([^"]+?)ava=1~um', $content, $urls)) {
             // директория
             $dir = md5($id_profile);
             $parts = str_split($dir, 8);
@@ -72,14 +76,9 @@ class vk
             // все норм
             echo $urls[1];
             return 1;
-        }
-
-        if (preg_match('~deactivated_hid_~um', $content, $urls)) {
-            $this->error[] = $id_profile . " get_vk_page_avatar_link - страница скрыта";
-            return -2;
-
         } else {
-            $this->error[] = $id_profile . " get_vk_page_avatar_link - не известная ошибка";
+
+            $this->error[] = $id_profile . " get_vk_page_avatar_link - не известная ошибка" . $content;
             return -1;
 
         }
@@ -91,18 +90,64 @@ class vk
     // чтбы не отвалилась вызывем перед каждой операциенй тяжелой
     function connect_mysql()
     {
+        //Custom PDO options.
+        $options = array(
+            PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
+            PDO::ATTR_EMULATE_PREPARES => false
+        );
 
+        //Connect to MySQL and instantiate our PDO object.
+        $this->pdo = new PDO("mysql:host=localhost;dbname=" . _DBNAME, _USER, _PASSWORD, $options);
 
     }
 
     function disconnect_mysql()
     {
 
-
     }
 
 
+    function get_id()
+    {
+        $this->connect_mysql();
 
+        $sql = "SELECT `id` FROM `images` WHERE `status` = 0 LIMIT 0,1";
+
+//Prepare our SELECT statement.
+        $statement = $this->pdo->prepare($sql);
+
+//Execute our SELECT statement.
+        $statement->execute();
+
+//Fetch the row.
+        return $statement->fetch(PDO::FETCH_ASSOC)['id'];
+
+    }
+
+    function update_status($id, $status)
+    {
+
+        $this->connect_mysql();
+        $sql = "UPDATE `images` SET `status` = :status WHERE `id` = :id;";
+
+//Prepare our statement.
+        $statement = $this->pdo->prepare($sql);
+
+//Bind our values to our parameters (we called them :make and :model).
+        $statement->bindValue(':status', $status);
+        $statement->bindValue(':id', $id);
+
+//Execute the statement and insert our values.
+        $inserted = $statement->execute();
+
+//Because PDOStatement::execute returns a TRUE or FALSE value,
+//we can easily check to see if our insert was successful.
+        if ($inserted) {
+            echo 'Row updated!\n';
+        }
+        $this->pdo = null;
+
+    }
 
 
 }
