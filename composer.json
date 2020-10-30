@@ -1,0 +1,6 @@
+{
+    "name": "rustafa/public_html",
+    "require": {
+        "guzzlehttp/guzzle": "7.0"
+    }
+}
