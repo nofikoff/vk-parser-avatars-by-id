@@ -20,6 +20,7 @@
 
 // снять процесс
 // kill -9 18722
+// kill -9 8878
 // найти процесс по имени
 // ps aux | grep -i php
 
@@ -29,18 +30,19 @@ require('vk.php');
 
 // бесконечный цикл
 while (true) {
-    $vk = new vk();
-    $id = $vk->get_id();
-    // отключаем БД
-    $vk->pdo = null;
-    // читаем из БД id
-    $status = $vk->get_vk_page_avatar_link($id);
-    // пишем в БД ответ
-    $vk->update_status($id, $status);
-    // отключаем БД
-    //$vk->pdo = null;
-    //логируем ошибки
-    if (count($vk->error)) print_r($vk->error);
+$vk = new vk();
+$id = $vk->get_id();
+if (!$id) die ("\n ************** End id $id *****************\n");
+// отключаем БД
+$vk->pdo = null;
+// читаем из БД id
+$status = $vk->get_vk_page_avatar_link($id);
+// пишем в БД ответ
+$vk->update_status($id, $status);
+// отключаем БД
+//$vk->pdo = null;
+//логируем ошибки
+if (count($vk->error)) print_r($vk->error);
 }
 
 

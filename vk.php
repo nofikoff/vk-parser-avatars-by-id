@@ -5,7 +5,7 @@
 
 class vk
 {
-    public $http_client_use_proxy = 1;
+    public $http_client_use_proxy = 0;
     public $pdo;
     public $error = [];
     public $client;
@@ -41,7 +41,7 @@ class vk
 
 
         $content = $this->send_http('https://vk.com/id' . $id_profile, "GET", $this->headers);
-
+        $content = mb_convert_encoding($content, "utf-8", "windows-1251");
 
         // нихуя заголовки не работают
         // оставил старый добрый CURL
@@ -58,11 +58,12 @@ class vk
 
         echo "\nhttps://vk.com/id" . $id_profile . " смотрим аватарку \n";
 
-        if (preg_match('~(deactivated|camera_200|service_msg_null|spamfight|404 Not Found)~m', $content, $urls)) {
+        if (preg_match('~(deactivated|camera_400|camera_200|service_msg_null|spamfight|404 Not Found|msg_back_button)~m', $content, $urls)) {
             $this->error[] = $id_profile . " get_vk_page_avatar_link - страница скрыта или удалена";
             return -2;
 
-        } else if (preg_match('~"([^"]+?)ava=1~m', $content, $urls)) {
+        } else if (preg_match('~"([^"]+?)ava=1~', $content, $urls)) {
+
 
             // директория
             $dir = md5($id_profile);
@@ -78,7 +79,6 @@ class vk
                 return -1;
             }
             // качаем файл
-
             $urls[1] = str_replace('&amp;', '&', $urls[1]);
 
             try {
@@ -133,14 +133,27 @@ class vk
         $statement->execute();
         $ok = $statement->fetch(PDO::FETCH_ASSOC)['count'];
 
-        $sql = "SELECT count(*) as count FROM `images` WHERE `status` = '-2'";
+        $sql = "SELECT count(*) as count FROM `images` WHERE `status` = '-2'"; //удален
         $statement = $this->pdo->prepare($sql);
         $statement->execute();
-        $notok = $statement->fetch(PDO::FETCH_ASSOC)['count'];
+        $deleted = $statement->fetch(PDO::FETCH_ASSOC)['count'];
+
+        $sql = "SELECT count(*) as count FROM `images` WHERE `status` = '-1'"; // статус не известен
+        $statement = $this->pdo->prepare($sql);
+        $statement->execute();
+        $zero = $statement->fetch(PDO::FETCH_ASSOC)['count'];
+
+        $sql = "SELECT count(*) as count FROM `images` WHERE `status` = '0'"; // статус не известен
+        $statement = $this->pdo->prepare($sql);
+        $statement->execute();
+        $left = $statement->fetch(PDO::FETCH_ASSOC)['count'];
+
 
         return [
             'ok' => $ok,
-            'notok' => $notok,
+            'deleted' => $deleted,
+            'zero' => $zero,
+            'left' => $left,
         ];
     }
 
@@ -148,7 +161,7 @@ class vk
     {
         $this->connect_mysql();
 
-        $sql = "SELECT `id` FROM `images` WHERE `status` = 0 LIMIT 0,1";
+        $sql = "SELECT `id` FROM `images` WHERE `status` = 0 LIMIT 0, 1";
 
 //Prepare our SELECT statement.
         $statement = $this->pdo->prepare($sql);
